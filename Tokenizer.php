@@ -143,7 +143,9 @@ class Tokenizer {
 					throw new ParseException('Mismatched block closing!', $token[1], $expected);
 				}
 
+
 				// close block
+				$blockStack[$blockDepth][] = array('end', 'block');
 				unset($blockStack[$blockDepth]);
 				unset($blockOpenStack[$blockDepth]);
 				$blockDepth--;
@@ -151,6 +153,7 @@ class Tokenizer {
 				$blockStack[$blockDepth][] = $token;
 			}
 		}
+		$ast[] = array('end', 'file');
 		return $ast;
 	}
 
