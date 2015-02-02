@@ -60,12 +60,9 @@ class Tokenizer {
 		return $tokens;
 	}
 
+	public function tokenizeFile($filename) {
+		return $this->tokenize(file_get_contents($filename);
+	}
+
 }
-
-
-$testString = "Dit is een test. Dit is, jazeker,een test.";
-$tokenizer = new Tokenizer();
-$tokenizer->addBoundary(' ');
-$tokenizer->addBoundaries(array('.', ','), true);
-print_r($tokenizer->tokenize($testString));
 
