@@ -48,7 +48,6 @@ class Parser {
 			$arguments = array();
 			for(; $index < $end; $index++) {
 				$node = $ast[$index];
-				echo "Consuming node {$this->displayNode($node)}\n";
 				if($node[0] == 'block') {
 					$blockState = $this->recurseRules[$state][$node[1]];
 					$arguments[] = $this->parse($node[2], $blockState);
