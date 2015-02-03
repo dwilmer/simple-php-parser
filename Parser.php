@@ -32,30 +32,35 @@ class Parser {
 
 		while($state != 'end') {
 			// try to match rules
-			$currentRules = $this->rules[$state];
+			$currentRules = $this->rewriteRules[$state];
 			$bestMatch = $this->getBestMatch($ast, $index, $currentRules);
 			
 			// no match, try to be as informative as possible and throw exception
 			if($bestMatch === null) {
-				$this->raiseMismatch($ast, $index, $currentRules);
+				$this->raiseMismatch($ast, $index, $state, $currentRules);
 			}
 
 			// we have a match!
-			$end = $index + count($bestMatch);
+			$consume = $bestMatch[0];
+			$produce = $bestMatch[1];
+			$nextState = $bestMatch[2];
+			$end = $index + count($consume);
 			$arguments = array();
 			for(; $index < $end; $index++) {
-				if($ast[$index][0] == 'block') {
-					$blockState = $this->recurseRules[$state][$ast[$index][1]];
-					$arguments[] = $this->validate($ast[$index][2], $blockState);
+				$node = $ast[$index];
+				echo "Consuming node {$this->displayNode($node)}\n";
+				if($node[0] == 'block') {
+					$blockState = $this->recurseRules[$state][$node[1]];
+					$arguments[] = $this->parse($node[2], $blockState);
 				} else {
-					$arguments = $ast[$index][1];
+					$arguments[] = $ast[$index][1];
 				}
 			}
-			$rewritten = $bestMatch[1]($arguments);
+			$rewritten = $produce($arguments);
 			$result = array_merge($result, $rewritten);
-			$state = $bestMatch[2];
+			$state = $nextState;
 		}
-		return $result
+		return $result;
 	}
 
 	private function getBestMatch($ast, $astIndex, $rules) {
@@ -76,12 +81,12 @@ class Parser {
 		$offset = 0;
 		while($offset < count($consume)) {
 			$astElem = $ast[$astIndex + $offset];
-			$matchElem = $comsume[$offset];
+			$matchElem = $consume[$offset];
 
 			if($astElem[0] != $matchElem[0]) {
 				return false;
 			}
-			if($matchElem[0] != 'varchar' && $matchElem[1] != $astElem) {
+			if($matchElem[0] != 'varchar' && $matchElem[1] != $astElem[1]) {
 				return false;
 			}
 			$offset++;
@@ -89,21 +94,26 @@ class Parser {
 		return $offset;
 	}
 
-	private function raiseMismatch($ast, $astIndex, $rules) {
-		$message = 'Unexpected token';
+	private function raiseMismatch($ast, $astIndex, $state, $rules) {
+		$message = 'Unexpected token in state ' . $state;
 		if($astIndex > 0) {
 			$message .= ' after ' . $this->displayNode($ast[$astIndex - 1]);
 		}
 		$expected = array();
 		foreach($rules as $rule) {
-			$expected[] = $this->displayNode($rule[0][0]);
+			$toAdd = $this->displayNode($rule[0][0]);
+			if(!in_array($toAdd, $expected)) {
+				$expected[] = $toAdd;
+			}
 		}
 		$actual = $this->displayNode($ast[$astIndex]);
-		throw new ParseException('Unexpected token', 'One of the following tokens: ' . implode(',' $expected), $actual);
+		throw new ParseException($message, 'One of the following tokens: ' . implode(',', $expected), $actual);
 	}
 
 	private function displayNode($node) {
-		if($node[0] == 'varchar') {
+		if($node[0] == 'end') {
+			return 'end of ' . $node[1];
+		} else if($node[0] == 'varchar') {
 			return 'varchar';
 		} else {
 			return '"' . $node[1] . '"';
