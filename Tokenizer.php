@@ -128,6 +128,7 @@ class Tokenizer {
 		$blockDepth = 0;
 		foreach($tokens as $token) {
 			if($token[0] == 'blockOpen') {
+				echo "Opening {$token[1]} block\n";
 				// create new block
 				$blockContents = array();
 				$block = array('block', $token[1], &$blockContents);
@@ -135,7 +136,9 @@ class Tokenizer {
 				$blockDepth++;
 				$blockStack[$blockDepth] =& $blockContents;
 				$blockOpenStack[$blockDepth] = $token[1];
+				unset($blockContents);
 			} else if($token[0] == 'blockClose') {
+				echo "Closing {$token[1]} block\n";
 				// check if block is correct
 				$blockOpen = $blockOpenStack[$blockDepth];
 				$expected = $this->blockCloses[array_search($blockOpen, $this->blockOpens)];
