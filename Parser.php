@@ -60,7 +60,7 @@ class Parser {
 
 	private function getBestMatch($ast, $astIndex, $rules) {
 		$bestMatch = null;
-		$bestScore = 0;
+		$bestScore = -1;
 		foreach($rules as $rule) {
 			$score = $this->tryMatch($ast, $astIndex, $rule[0]);
 			if($score !== false && $score > $bestScore) {
