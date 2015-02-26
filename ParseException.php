@@ -3,7 +3,9 @@
  * ParseException class, for exceptions during parsing
  */
 
-class ParseException extends Exception {
+namespace parser;
+
+class ParseException extends \Exception {
 	protected $expected;
 	protected $actual;
 

@@ -1,4 +1,5 @@
 <?php
+namespace parser;
 
 class Parser {
 	private $states;

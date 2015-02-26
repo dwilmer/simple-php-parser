@@ -2,8 +2,7 @@
 /**
  * Tokenizer class, to turn a string into a list of tokens
  */
-
-require 'ParseException.php';
+namespace parser;
 
 class Tokenizer {
 	// constatns
