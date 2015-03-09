@@ -19,6 +19,7 @@ class Tokenizer {
 	private $blockOpens;
 	private $blockCloses;
 	private $blockBoundaries;
+	private $blockIgnores;
 	private $constructs;
 	private $keywords;
 
@@ -29,6 +30,7 @@ class Tokenizer {
 		$this->blockOpens = array();
 		$this->blockCloses = array();
 		$this->blockBoundaries = array();
+		$this->inertBlocks = array();
 		$this->constructs = array();
 		$this->keywords = array();
 	}
@@ -74,6 +76,9 @@ class Tokenizer {
 			$this->includedTokens[] = $this->escapeBoundary($close);
 			$this->blockOpens[] = $open;
 			$this->blockCloses[] = $close;
+		}
+		if($inert) {
+			$this->inertBlocks[] = $open;
 		}
 	}
 
@@ -154,6 +159,21 @@ class Tokenizer {
 		$blockOpenStack = array('');
 		$blockDepth = 0;
 		foreach($tokens as $token) {
+			// check if we're in an inert block
+			if(in_array($blockOpenStack[$blockDepth], $this->inertBlocks)) {
+				$blockOpen = $blockOpenStack[$blockDepth];
+				if(in_array($blockOpen, $this->blockOpens)) {
+					$expectedClose = $this->blockCloses[array_search($blockOpen, $this->blockOpens)];
+					$expectedType = 'blockClose';
+				} else {
+					$expectedClose = $blockOpen;
+					$expectedType = 'blockBoundary';
+				}
+				if($token[0] != $expectedType  || $token[1] != $expectedClose) {
+					$token[0] = 'varchar';
+				}
+			}
+
 			switch($token[0]){
 			case 'blockBoundary':
 				$blockType = $token[1];
