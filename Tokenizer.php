@@ -18,6 +18,7 @@ class Tokenizer {
 	// Lexical Analysis fields
 	private $blockOpens;
 	private $blockCloses;
+	private $blockBoundaries;
 	private $constructs;
 	private $keywords;
 
@@ -27,6 +28,7 @@ class Tokenizer {
 		$this->includedTokens = array();
 		$this->blockOpens = array();
 		$this->blockCloses = array();
+		$this->blockBoundaries = array();
 		$this->constructs = array();
 		$this->keywords = array();
 	}
@@ -63,11 +65,16 @@ class Tokenizer {
 		}
 	}
 
-	public function addBlock($open, $close) {
-		$this->includedTokens[] = $this->escapeBoundary($open);
-		$this->includedTokens[] = $this->escapeBoundary($close);
-		$this->blockOpens[] = $open;
-		$this->blockCloses[] = $close;
+	public function addBlock($open, $close, $inert = false) {
+		if($open == $close) {
+			$this->includedTokens[] = $this->escapeBoundary($open);
+			$this->blockBoundaries[] = $open;
+		} else {
+			$this->includedTokens[] = $this->escapeBoundary($open);
+			$this->includedTokens[] = $this->escapeBoundary($close);
+			$this->blockOpens[] = $open;
+			$this->blockCloses[] = $close;
+		}
 	}
 
 	public function addKeyword($keyword) {
@@ -115,8 +122,29 @@ class Tokenizer {
 		if(in_array($part, $this->blockCloses)) {
 			return array('blockClose', $part);
 		}
+		if(in_array($part, $this->blockBoundaries)) {
+			return array('blockBoundary', $part);
+		}
 		return array('varchar', $part);
 	}
+
+	private function openBlock($blockType, &$blockStack, &$blockDepth, &$blockOpenStack) {
+		$blockContents = array();
+		$block = array('block', $blockType, &$blockContents);
+		$blockStack[$blockDepth][] = $block;
+		$blockDepth++;
+		$blockStack[$blockDepth] =& $blockContents;
+		$blockOpenStack[$blockDepth] = $blockType;
+		unset($blockContents);
+	}
+
+	private function closeBlock(&$blockStack, &$blockDepth, &$blockOpenStack) {
+		$blockStack[$blockDepth][] = array('end', 'block');
+		unset($blockStack[$blockDepth]);
+		unset($blockOpenStack[$blockDepth]);
+		$blockDepth--;
+	}
+
 
 	public function tokenize($string) {
 		$parts = $this->scan($string);
@@ -126,31 +154,32 @@ class Tokenizer {
 		$blockOpenStack = array('');
 		$blockDepth = 0;
 		foreach($tokens as $token) {
-			if($token[0] == 'blockOpen') {
-				// create new block
-				$blockContents = array();
-				$block = array('block', $token[1], &$blockContents);
-				$blockStack[$blockDepth][] = $block;
-				$blockDepth++;
-				$blockStack[$blockDepth] =& $blockContents;
-				$blockOpenStack[$blockDepth] = $token[1];
-				unset($blockContents);
-			} else if($token[0] == 'blockClose') {
+			switch($token[0]){
+			case 'blockBoundary':
+				$blockType = $token[1];
+				if($blockOpenStack[$blockDepth] == $blockType) {
+					$this->closeBlock($blockStack, $blockDepth, $blockOpenStack);
+				} else {
+					$this->openBlock($blockType, $blockStack, $blockDepth, $blockOpenStack);
+				}
+				break;
+			case 'blockOpen':
+				$this->openBlock($token[1], $blockStack, $blockDepth, $blockOpenStack);
+				break;
+			case 'blockClose':
 				// check if block is correct
 				$blockOpen = $blockOpenStack[$blockDepth];
 				$expected = $this->blockCloses[array_search($blockOpen, $this->blockOpens)];
 				if($expected != $token[1]) {
 					throw new ParseException('Mismatched block closing!', $token[1], $expected);
+				} else {
+					// close block
+					$this->closeBlock($blockStack, $blockDepth, $blockOpenStack);
 				}
-
-
-				// close block
-				$blockStack[$blockDepth][] = array('end', 'block');
-				unset($blockStack[$blockDepth]);
-				unset($blockOpenStack[$blockDepth]);
-				$blockDepth--;
-			} else {
+				break;
+			default:
 				$blockStack[$blockDepth][] = $token;
+				break;
 			}
 		}
 		$ast[] = array('end', 'file');
