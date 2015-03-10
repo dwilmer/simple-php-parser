@@ -12,16 +12,22 @@ class Parser {
 	}
 
 	public function addState($state) {
-		$this->states[] = $state;
-		$this->rewriteRules[$state] = array();
-		$this->recurseRules[$state] = array();
+		if(!in_array($state, $this->states)) {
+			$this->states[] = $state;
+			$this->rewriteRules[$state] = array();
+			$this->recurseRules[$state] = array();
+		}
 	}
 
 	public function addRewriteRule($currentState, $consume, $produce, $nextState) {
+		$this->addState($currentState);
+		$this->addState($nextState);
 		$this->rewriteRules[$currentState][] = array($consume, $produce, $nextState);
 	}
 
 	public function addRecurseRule($state, $blockElement, $recurseStart) {
+		$this->addState($state);
+		$this->addState($recurseStart);
 		$this->recurseRules[$state][$blockElement] = $recurseStart;
 	}
 
