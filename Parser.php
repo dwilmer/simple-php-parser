@@ -92,7 +92,7 @@ class Parser {
 			if($astElem[0] != $matchElem[0]) {
 				return false;
 			}
-			if($matchElem[0] != 'varchar' && $matchElem[1] != $astElem[1]) {
+			if($matchElem[0] != 'varchar' && $matchElem[0] != 'string' && $matchElem[1] != $astElem[1]) {
 				return false;
 			}
 			$offset++;
@@ -119,8 +119,12 @@ class Parser {
 	private function displayNode($node) {
 		if($node[0] == 'end') {
 			return 'end of ' . $node[1];
-		} else if($node[0] == 'varchar') {
-			return 'varchar';
+		} else if($node[0] == 'varchar' || $node[0] == 'string') {
+			$toReturn = $node[0];
+			if(isset($node[1])) {
+				$toReturn .= ': "' . $node[1] . '"';
+			}
+			return $toReturn;
 		} else {
 			return '"' . $node[1] . '"';
 		}

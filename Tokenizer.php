@@ -40,8 +40,8 @@ class Tokenizer {
 	// Functions for setting up the tokenizer
 	private function escapeBoundary($boundary) {
 		return str_replace(
-			array('\\','.','[',']','(',')'),
-			array('\\\\','\.','\[', '\]','\(','\)'), $boundary);
+			array('\\','.','[',']','(',')', '$'),
+			array('\\\\','\.','\[', '\]','\(','\)', '\$'), $boundary);
 	}
 
 	public function addBoundary($boundary, $isRegex = false) {
@@ -106,6 +106,7 @@ class Tokenizer {
 				}
 				$pattern .= '(' . $this->stringOpens[$i] . '.*' . $this->stringCloses[$i] . ')';
 			}
+			$pattern .= '/U';
 			$parts = preg_split($pattern, $string, null, PREG_SPLIT_DELIM_CAPTURE);
 		} else {
 			$parts = array($string);
@@ -146,7 +147,7 @@ class Tokenizer {
 		for($i = 0; $i < count($this->stringOpens); $i++) {
 			$open = $this->stringOpens[$i];
 			$close = $this->stringCloses[$i];
-			if(strstr($part, $open) === 0 && strstr($part, $close) === strlen($part) - strlen($close)) {
+			if(strpos($part, $open) === 0 && strpos($part, $close, strlen($open)) === strlen($part) - strlen($close)) {
 				return substr($part, strlen($open), strlen($part) - strlen($open) - strlen($close));
 			}
 		}
