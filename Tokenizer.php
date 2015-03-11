@@ -10,7 +10,7 @@ class Tokenizer {
 	public static $TAB = "\t";
 	public static $NEWLINE = "\r?\n";
 	public static $WHITESPACE = '[\s]+';
-	
+
 	// Boundaries for Splitting / Scanning
 	private $excludedTokens;
 	private $includedTokens;
@@ -19,7 +19,8 @@ class Tokenizer {
 	private $blockOpens;
 	private $blockCloses;
 	private $blockBoundaries;
-	private $blockIgnores;
+	private $stringOpens;
+	private $stringCloses;
 	private $constructs;
 	private $keywords;
 
@@ -30,7 +31,8 @@ class Tokenizer {
 		$this->blockOpens = array();
 		$this->blockCloses = array();
 		$this->blockBoundaries = array();
-		$this->inertBlocks = array();
+		$this->stringOpens = array();
+		$this->stringCloses = array();
 		$this->constructs = array();
 		$this->keywords = array();
 	}
@@ -67,7 +69,7 @@ class Tokenizer {
 		}
 	}
 
-	public function addBlock($open, $close, $inert = false) {
+	public function addBlock($open, $close) {
 		if($open == $close) {
 			$this->includedTokens[] = $this->escapeBoundary($open);
 			$this->blockBoundaries[] = $open;
@@ -77,9 +79,11 @@ class Tokenizer {
 			$this->blockOpens[] = $open;
 			$this->blockCloses[] = $close;
 		}
-		if($inert) {
-			$this->inertBlocks[] = $open;
-		}
+	}
+
+	public function addString($open, $close) {
+		$this->stringOpens[] = $open;
+		$this->stringCloses[] = $close;
 	}
 
 	public function addKeyword($keyword) {
@@ -92,29 +96,68 @@ class Tokenizer {
 
 	// Functions for tokenizing
 	private function scan($string) {
-		// split on excluded tokens
-		if(count($this->excludedTokens) > 0) {
-			$pattern = '/(' . implode(')|(', $this->excludedTokens) . ')/';
-			$subparts = preg_split($pattern, $string, null, PREG_SPLIT_NO_EMPTY);
-		} else {
-			$subparts = array($string);
+		// extract strings
+		if(count($this->stringOpens) > 0) {
+			$parts = array();
+			$pattern = '/';
+			for($i = 0; $i < count($this->stringOpens); $i++) {
+				if($i > 0) {
+					$pattern .= '|';
+				}
+				$pattern .= '(' . $this->stringOpens[$i] . '.*' . $this->stringCloses[$i] . ')';
+			}
+			$parts = preg_split($pattern, $string, null, PREG_SPLIT_DELIM_CAPTURE);
 		}
 
-		// split on included tokens
-		if(count($this->includedTokens) > 0) {
-			$parts= array();
-			$pattern = '/(' . implode(')|(', $this->includedTokens) . ')/';
-			foreach($subparts as $subpart) {
-				$newparts = preg_split($pattern, $subpart, null, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-				$parts = array_merge($parts, $newparts);
+		$toReturn = array();
+		for($i = 0; $i < count($parts); $i++) {
+			if($i % 2 == 0) {
+				// split on excluded tokens
+				if(count($this->excludedTokens) > 0) {
+					$pattern = '/(' . implode(')|(', $this->excludedTokens) . ')/';
+					$parts[$i] = preg_split($pattern, $parts[$i], null, PREG_SPLIT_NO_EMPTY);
+				} else {
+					$parts[$i] = array($parts[$i]);
+				}
+
+				// split on included tokens
+				if(count($this->includedTokens) > 0) {
+					$subparts= array();
+					$pattern = '/(' . implode(')|(', $this->includedTokens) . ')/';
+					foreach($parts[$i] as $subpart) {
+						$newparts = preg_split($pattern, $subpart, null, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+						$subparts = array_merge($subparts, $newparts);
+					}
+				} else {
+					$subparts = $parts[$i];
+				}
+				$toReturn = array_merge($toReturn, $subparts); // lists of tokens are merged
+			} else {
+				$toReturn[] = $parts[$i];// strings are inserted literally
 			}
-		} else {
-			$parts = $subparts;
 		}
-		return $parts;
+
+		return $toReturn;
 	}
 
+	private function getStringContents($part) {
+		for($i = 0; $i < count($this->stringOpens); $i++) {
+			$open = $this->stringOpens[$i];
+			$close = $this->stringCloses[$i];
+			if(strstr($part, $open) === 0 && strstr($part, $close) === strlen($part) - strlen($close)) {
+				return substr($part, strlen($open), strlen($part) - strlen($open) - strlen($close));
+			}
+		}
+		return false;
+	}
+
+
+
 	private function analyze($part) {
+		$stringContents = $this->getStringContents($part);
+		if($stringContents !== false) {
+			return array('string', $stringContents);
+		}
 		if(in_array($part, $this->keywords)) {
 			return array('keyword', $part);
 		}
