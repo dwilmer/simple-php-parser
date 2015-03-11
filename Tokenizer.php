@@ -107,6 +107,8 @@ class Tokenizer {
 				$pattern .= '(' . $this->stringOpens[$i] . '.*' . $this->stringCloses[$i] . ')';
 			}
 			$parts = preg_split($pattern, $string, null, PREG_SPLIT_DELIM_CAPTURE);
+		} else {
+			$parts = array($string);
 		}
 
 		$toReturn = array();
@@ -202,21 +204,6 @@ class Tokenizer {
 		$blockOpenStack = array('');
 		$blockDepth = 0;
 		foreach($tokens as $token) {
-			// check if we're in an inert block
-			if(in_array($blockOpenStack[$blockDepth], $this->inertBlocks)) {
-				$blockOpen = $blockOpenStack[$blockDepth];
-				if(in_array($blockOpen, $this->blockOpens)) {
-					$expectedClose = $this->blockCloses[array_search($blockOpen, $this->blockOpens)];
-					$expectedType = 'blockClose';
-				} else {
-					$expectedClose = $blockOpen;
-					$expectedType = 'blockBoundary';
-				}
-				if($token[0] != $expectedType  || $token[1] != $expectedClose) {
-					$token[0] = 'varchar';
-				}
-			}
-
 			switch($token[0]){
 			case 'blockBoundary':
 				$blockType = $token[1];
