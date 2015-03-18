@@ -5,12 +5,22 @@ include 'Tokenizer.php';
 include 'Parser.php';
 include 'ParseException.php';
 
+/**
+ * A class which creates a parser for a language defined by a language definition file.
+ *
+ * @author dwilmer
+ */
 class LanguageParser {
 	private static $ldfTokenizer;
 	private static $ldfParser;
 	private $tokenizer;
 	private $parser;
 
+	/**
+	 * Reads the language definition file and creates the appropriate tokenizer and parser
+	 *
+	 * @param $languageDefinitionFile The path to the language definition file
+	 */
 	public function __construct($languageDefinitionFile) {
 		$ldfAst = LanguageParser::getTokenizer()->tokenize(file_get_contents($languageDefinitionFile));
 		$parsedLDF = LanguageParser::getParser()->parse($ldfAst);
@@ -18,6 +28,12 @@ class LanguageParser {
 		$this->parser = LanguageParser::createParser($parsedLDF);
 	}
 
+	/**
+	 * Parse an input file using the rules set in the language definition file
+	 *
+	 * @param $inputFile The string path to the file to be parsed
+	 * @return An array of tokens, representing the input file as read using the rules of the language definition file.
+	 */
 	public function parse($inputFile) {
 		$inputString = file_get_contents($inputFile);
 		$tokenized = $this->tokenizer->tokenize($inputString);
