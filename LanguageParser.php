@@ -5,250 +5,265 @@ include 'Tokenizer.php';
 include 'Parser.php';
 include 'ParseException.php';
 
-class LDFReader {
-	private static $tokenizer;
-	private static $parser;
+class LanguageParser {
+	private static $ldfTokenizer;
+	private static $ldfParser;
+	private $tokenizer;
+	private $parser;
+
+	public function __construct($languageDefinitionFile) {
+		$ldfAst = LanguageParser::getTokenizer()->tokenize(file_get_contents($languageDefinitionFile));
+		$parsedLDF = LanguageParser::getParser()->parse($ldfAst);
+		$this->tokenizer = LanguageParser::createTokenizer($parsedLDF);
+		$this->parser = LanguageParser::createParser($parsedLDF);
+	}
+
+	public function parse($inputFile) {
+		$inputString = file_get_contents($inputFile);
+		$tokenized = $this->tokenizer->tokenize($inputString);
+		return $this->parser->parse($tokenized);
+	}
 
 	private static function getTokenizer() {
-		if(LDFReader::$tokenizer == null) {
-			$tokenizer = new Tokenizer();
-			$tokenizer->addBoundary(Tokenizer::$WHITESPACE, true);
-			$tokenizer->addKeywords(array('TOKENS', 'BLOCKS', 'REWRITERULES'));
-			$tokenizer->addKeywords(array('keyword', 'keywords', 'construct', 'constructs', 'block'));
-			$tokenizer->addKeywords(array('ignore', 'whitespace', 'newline', 'space', 'tab', 'end', 'block', 'string', 'varchar', 'none', 'whitespace', 'file'));
-			$tokenizer->addConstructs(array(',', '$', ':', '->'));
-			$tokenizer->addString('\'','\'');
-			$tokenizer->addBlock('(', ')');
-			LDFReader::$tokenizer = $tokenizer;
+		if(LanguageParser::$ldfTokenizer == null) {
+			$ldfTokenizer = new Tokenizer();
+			$ldfTokenizer->addBoundary(Tokenizer::$WHITESPACE, true);
+			$ldfTokenizer->addKeywords(array('TOKENS', 'BLOCKS', 'REWRITERULES'));
+			$ldfTokenizer->addKeywords(array('keyword', 'keywords', 'construct', 'constructs', 'block'));
+			$ldfTokenizer->addKeywords(array('ignore', 'whitespace', 'newline', 'space', 'tab', 'end', 'block', 'string', 'varchar', 'none', 'whitespace', 'file'));
+			$ldfTokenizer->addConstructs(array(',', '$', ':', '->'));
+			$ldfTokenizer->addString('\'','\'');
+			$ldfTokenizer->addBlock('(', ')');
+			LanguageParser::$ldfTokenizer = $ldfTokenizer;
 		}
-		return LDFReader::$tokenizer;
+		return LanguageParser::$ldfTokenizer;
 	}
 
 	private static function getParser() {
-		if(LDFReader::$parser == null) {
-			$parser = new Parser();
+		if(LanguageParser::$ldfParser == null) {
+			$ldfParser = new Parser();
 
 			// rewrite rules for general structure
-			$parser->addRewriteRule('start',array(array('keyword', 'TOKENS')), function($tokens) {return array();}, 'tokens');
-			$parser->addRewriteRule('tokens',array(), function($tokens) {return array();}, 'start');
-			$parser->addRewriteRule('start',array(array('keyword', 'BLOCKS')), function($tokens) {return array();}, 'blocks');
-			$parser->addRewriteRule('blocks',array(), function($tokens) {return array();}, 'start');
-			$parser->addRewriteRule('start',array(array('keyword', 'REWRITERULES')), function($tokens) {return array();}, 'rewrites');
-			$parser->addRewriteRule('rewrites',array(), function($tokens) {return array();}, 'start');
-			$parser->addRewriteRule('start', array(array('end', 'file')), function($tokens) {return array();},'end');
+			$ldfParser->addRewriteRule('start',array(array('keyword', 'TOKENS')), function($tokens) {return array();}, 'tokens');
+			$ldfParser->addRewriteRule('tokens',array(), function($tokens) {return array();}, 'start');
+			$ldfParser->addRewriteRule('start',array(array('keyword', 'BLOCKS')), function($tokens) {return array();}, 'blocks');
+			$ldfParser->addRewriteRule('blocks',array(), function($tokens) {return array();}, 'start');
+			$ldfParser->addRewriteRule('start',array(array('keyword', 'REWRITERULES')), function($tokens) {return array();}, 'rewrites');
+			$ldfParser->addRewriteRule('rewrites',array(), function($tokens) {return array();}, 'start');
+			$ldfParser->addRewriteRule('start', array(array('end', 'file')), function($tokens) {return array();},'end');
 
 			// token rewrite rules
-			LDFReader::addTokenRewriteRules($parser);
+			LanguageParser::addTokenRewriteRules($ldfParser);
 
 			// block rewrite rules
-			$parser->addRewriteRule('blocks',
+			$ldfParser->addRewriteRule('blocks',
 				array(array('varchar'), array('construct', ':'), array('string'), array('construct', '->'), array('varchar')),
 				function($tokens) {return array(array('parser', 'blockrule', $tokens[0], $tokens[2], $tokens[4])); },
 				'blocks');
 
 			// rewrite rewrite rules
-			LDFReader::addRewriteRewriteRules($parser);
+			LanguageParser::addRewriteRewriteRules($ldfParser);
 
-			LDFReader::$parser = $parser;
+			LanguageParser::$ldfParser = $ldfParser;
 		}
-		return LDFReader::$parser;
+		return LanguageParser::$ldfParser;
 	}
 
-	private static function addTokenRewriteRules($parser) {
+	private static function addTokenRewriteRules($ldfParser) {
 		// add ignore rewrite rules
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'ignore'), array('keyword', 'whitespace')),
 			function($tokens) {return array(array('tokenizer', 'ignore', 'whitespace')); },
 			'tokens');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'ignore'), array('keyword', 'newline')),
 			function($tokens) {return array(array('tokenizer', 'ignore', 'newline')); },
 			'tokens');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'ignore'), array('keyword', 'tab')),
 			function($tokens) {return array(array('tokenizer', 'ignore', 'tab')); },
 			'tokens');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'ignore'), array('keyword', 'space')),
 			function($tokens) {return array(array('tokenizer', 'ignore', 'space')); },
 			'tokens');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'ignore'), array('varchar')),
 			function($tokens) {return array(array('tokenizer', 'ignore', 'varchar', $tokens[1])); },
 			'tokens');
 
 		// add keyword rewrite rules
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'keyword')),
 			function($tokens) {return array(); },
 			'keywords');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'keywords')),
 			function($tokens) {return array(); },
 			'keywords');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'keywords',
 			array(array('string')),
 			function($tokens) {return array(array('tokenizer', 'keyword', $tokens[0]));},
 			'keywordEnd');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'keywordEnd',
 			array(array('construct', ',')),
 			function($tokens) {return array(); },
 			'keywords');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'keywordEnd',
 			array(),
 			function($tokens) {return array(); },
 			'tokens');
 
 		// add construct rewrite rules
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'construct')),
 			function($tokens) {return array(); },
 			'constructs');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'constructs')),
 			function($tokens) {return array(); },
 			'constructs');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'constructs',
 			array(array('string')),
 			function($tokens) {return array(array('tokenizer', 'construct', $tokens[0]));},
 			'constructEnd');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'constructEnd',
 			array(array('construct', ',')),
 			function($tokens) {return array(); },
 			'constructs');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'constructEnd',
 			array(),
 			function($tokens) {return array(); },
 			'tokens');
 
 		// add block and string rewrite rules
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'block'), array('string'), array('string')),
 			function($tokens) {return array(array('tokenizer', 'block', $tokens[1], $tokens[2]));},
 			'tokens');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'tokens',
 			array(array('keyword', 'string'), array('string'), array('string')),
 			function($tokens) {return array(array('tokenizer', 'string', $tokens[1], $tokens[2]));},
 			'tokens');
 	}
 
-	public static function addRewriteRewriteRules($parser) {
+	public static function addRewriteRewriteRules($ldfParser) {
 		// basic functioning
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewrites',
 			array(array('varchar'), array('construct', ':'), array('block', '('), array('construct', '->')),
 			function($tokens) {return array(array('parser', 'rewriteSource', $tokens[0], $tokens[2]));},
 			'rewriteDestination');
-		$parser->addRecurseRule('rewrites', '(', 'rewriteSourceArrayStart');
+		$ldfParser->addRecurseRule('rewrites', '(', 'rewriteSourceArrayStart');
 
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteDestination',
 			array(array('varchar'), array('construct', ':'), array('keyword', 'none')),
 			function($tokens) {return array(array('parser', 'rewriteDestination', $tokens[0], 'none'));},
 			'rewrites');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteDestination',
 			array(array('varchar'), array('construct', ':'), array('block', '(')),
 			function($tokens) {return array(array('parser', 'rewriteDestination', $tokens[0], $tokens[2]));},
 			'rewrites');
-		$parser->addRecurseRule('rewriteDestination', '(', 'rewriteDestinationArrayStart');
+		$ldfParser->addRecurseRule('rewriteDestination', '(', 'rewriteDestinationArrayStart');
 
 		// contents of source array
-		$parser->addRewriteRule( // empty
+		$ldfParser->addRewriteRule( // empty
 			'rewriteSourceArrayStart',
 			array(array('end', 'block')),
 			function($tokens) {return array();},
 			'end');
-		$parser->addRewriteRule( // not empty
+		$ldfParser->addRewriteRule( // not empty
 			'rewriteSourceArrayStart',
 			array(),
 			function($tokens) {return array();},
 			'rewriteSourceArray');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteSourceArray',
 			array(array('keyword', 'keyword'), array('string')),
 			function($tokens) {return array(array('keyword', $tokens[1])); },
 			'rewriteSourceArrayEnd');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteSourceArray',
 			array(array('keyword', 'block'), array('string')),
 			function($tokens) {return array(array('block', $tokens[1])); },
 			'rewriteSourceArrayEnd');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteSourceArray',
 			array(array('string')),
 			function($tokens) {return array(array('construct', $tokens[0])); },
 			'rewriteSourceArrayEnd');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteSourceArray',
 			array(array('keyword', 'varchar')),
 			function($tokens) {return array(array('varchar')); },
 			'rewriteSourceArrayEnd');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteSourceArray',
 			array(array('keyword', 'end'), array('keyword', 'file')),
 			function($tokens) {return array(array('end', 'file')); },
 			'rewriteSourceArrayEnd');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteSourceArray',
 			array(array('keyword', 'end'), array('keyword', 'block')),
 			function($tokens) {return array(array('end', 'block')); },
 			'rewriteSourceArrayEnd');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteSourceArrayEnd',
 			array(array('construct', ',')),
 			function($tokens) {return array();},
 			'rewriteSourceArray');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteSourceArrayEnd',
 			array(array('end', 'block')),
 			function($tokens) {return array();},
 			'end');
 
 		// contents of destination array
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteDestinationArrayStart',
 			array(array('end', 'block')),
 			function($tokens) {return array(); },
 			'end');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteDestinationArrayStart',
 			array(),
 			function($tokens) {return array(); },
 			'rewriteDestinationArray');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteDestinationArray',
 			array(array('string')),
 			function($tokens) {return array(array('string', $tokens[0])); },
 			'rewriteDestinationArrayEnd');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteDestinationArray',
 			array(array('construct', '$'), array('varchar')),
 			function($tokens) {return array(array('backref', $tokens[1])); },
 			'rewriteDestinationArrayEnd');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteDestinationArrayEnd',
 			array(array('construct', ',')),
 			function($tokens) {return array();},
 			'rewriteDestinationArray');
-		$parser->addRewriteRule(
+		$ldfParser->addRewriteRule(
 			'rewriteDestinationArrayEnd',
 			array(),
 			function($tokens) {return array();},
@@ -256,26 +271,26 @@ class LDFReader {
 	}
 
 	private static function createTokenizer($parsed) {
-		$tokenizer = new Tokenizer();
+		$ldfTokenizer = new Tokenizer();
 		foreach($parsed as $rule) { // ('tokenizer', 'instruction', 'value'...)
 			if($rule[0] == 'tokenizer') {
 				switch($rule[1]) {
 				case 'ignore':
 					switch($rule[2]) {
 					case 'whitespace':
-						$tokenizer->addBoundary(Tokenizer::$WHITESPACE, true);
+						$ldfTokenizer->addBoundary(Tokenizer::$WHITESPACE, true);
 						break;
 					case 'newline':
-						$tokenizer->addBoundary(Tokenizer::$NEWLINE, true);
+						$ldfTokenizer->addBoundary(Tokenizer::$NEWLINE, true);
 						break;
 					case 'tab':
-						$tokenizer->addBoundary(Tokenizer::$TAB, true);
+						$ldfTokenizer->addBoundary(Tokenizer::$TAB, true);
 						break;
 					case 'space':
-						$tokenizer->addBoundary(Tokenizer::$SPACE, true);
+						$ldfTokenizer->addBoundary(Tokenizer::$SPACE, true);
 						break;
 					case 'varchar':
-						$tokenizer->addBoundary($rule[3]);
+						$ldfTokenizer->addBoundary($rule[3]);
 						break;
 					default:
 						throw new \Exception("Unknown ignore rule: {$rule[2]}");
@@ -284,16 +299,16 @@ class LDFReader {
 					break;
 
 					case 'keyword':
-						$tokenizer->addKeyword($rule[2]);
+						$ldfTokenizer->addKeyword($rule[2]);
 						break;
 					case 'construct':
-						$tokenizer->addConstruct($rule[2]);
+						$ldfTokenizer->addConstruct($rule[2]);
 						break;
 					case 'block':
-						$tokenizer->addBlock($rule[2], $rule[3]);
+						$ldfTokenizer->addBlock($rule[2], $rule[3]);
 						break;
 					case 'string':
-						$tokenizer->addString($rule[2], $rule[3]);
+						$ldfTokenizer->addString($rule[2], $rule[3]);
 						break;
 					default:
 						throw new \Exception("Unkown tokenizer rule: {$rule[1]}");
@@ -301,11 +316,11 @@ class LDFReader {
 				}
 			}
 		}
-		return $tokenizer;
+		return $ldfTokenizer;
 	}
 
 	private static function createParser($parsed) {
-		$parser = new Parser();
+		$ldfParser = new Parser();
 
 		$rewriteSource = null;
 		foreach($parsed as $rule) {
@@ -325,13 +340,13 @@ class LDFReader {
 						throw new \Exception('Found rewrite destination rule without rewrite source rule');
 					}
 
-					$destinationFunction = LDFReader::getRewriteFunction($rule[3]);
+					$destinationFunction = LanguageParser::getRewriteFunction($rule[3]);
 					$destinationState = $rule[2];
 					if($destinationState == 'final') {
 						$destinationState = 'end';
 					}
 
-					$parser->addRewriteRule($rewriteSource->state,
+					$ldfParser->addRewriteRule($rewriteSource->state,
 						$rewriteSource->tokens,
 						$destinationFunction,
 						$destinationState);
@@ -339,7 +354,7 @@ class LDFReader {
 					$rewriteSource = null;
 					break;
 				case 'blockrule':
-					$parser->addRecurseRule($rule[2], $rule[3], $rule[4]);
+					$ldfParser->addRecurseRule($rule[2], $rule[3], $rule[4]);
 					break;
 				default:
 					throw new \Exception("Unknown parser rule: {$rule[1]}");
@@ -348,7 +363,7 @@ class LDFReader {
 			}
 		}
 
-		return $parser;
+		return $ldfParser;
 	}
 
 	private static function getRewriteFunction($rules) {
@@ -379,21 +394,5 @@ class LDFReader {
 			};
 		}
 	}
-
-
-	public static function readDefinition($filename) {
-		$ast = LDFReader::tokenizeString(file_get_contents($filename));
-		$parsed = LDFReader::parseAst($ast);
-		$tokenizer = LDFReader::createTokenizer($parsed);
-		$parser = LDFReader::createParser($parsed);
-		return array('ast' => $ast, 'parsed'=>$parsed, 'tokenizer'=>$tokenizer, 'parser'=>$parser);
-	}
-	public static function tokenizeString($string) {
-		return LDFReader::getTokenizer()->tokenize($string);
-	}
-	public static function parseAst($ast) {
-		return LDFReader::getParser()->parse($ast);
-	}
-
 }
 
