@@ -1,1 +1,66 @@
 This is a simple parser written in PHP.
+
+Although the parser and tokenizer are separately accessible, the recommended method is to use a language definition file and the `LanguageReader` class.
+The language definition language is pretty simple — at least for those who know a bit about parsers ;).
+
+Parsing a file is a two-step process: first the file is split into tokens — the words if you will — after which these tokens are combined to form meaningful combinations, or the sentences.
+
+Tokenizer
+=========
+To split a file, we need to know which parts are tokens of themselves, like punctuation in English, and which parts are merely separation, like the spaces between words.
+There are two special types of tokens: blocks and strings.
+
+Blocks are pairs of opening and closing tokens (like inside parenthesis, which are also opening and closing).
+Inside these blocks there is still regular structure, except maybe with a different meaning.
+Blocks can therefore also be nested.
+
+Strings are similar to blocks, in that they can be opened or closed.
+The difference is that no further analysis is done within the string; only once the closing boundary is found is analysis continued.
+
+The remaining parts are simply tokens, which can be some random text (which we call a `varchar`) or a keyword, if it is designated to be one.
+
+Parser
+======
+Todo...
+
+
+Example
+=======
+  TOKENS
+
+ignore whitespace
+keyword 'entity', 'inverse', 'length', 'id'
+constructs '->', '=', '::', '.'
+block '{' '}'
+block '(' ')'
+block '<' '>'
+
+  BLOCKS
+
+start: '{' -> blockState
+typeinfo: '<' -> specificType
+typeinfo: '(' -> typeinfoblock
+
+  REWRITERULES
+start: (keyword 'entity', varchar, block '{') -> start: ($1, $2)
+start: (keyword 'entity', varchar) -> entity: ('entityName', $1)
+entity: (block '{') -> start: ('entityBlock', $0)
+start: (end file) -> final: none
+
+blockState: (end block) -> final: none
+blockState: (varchar, '::', varchar) -> typeinfo: ('field', $0, $2)
+blockState: (varchar, '->', varchar) -> typeinfo: ('ref', $0, $2)
+
+typeinfo: (block '<') -> typeinfo: ('typeInfo', $0)
+typeinfo: (block '(') -> typeinfo: ('typeInfo', $0)
+typeinfo: () -> blockState: none
+
+specificType: (varchar) -> final: ('specificType', $0)
+typeinfoblock: (keyword 'id') -> typeinfoblockEnd: ('id')
+typeinfoblock: (keyword 'length', '=', varchar) -> typeinfoblockEnd: ('length', $2)
+typeinfoblock: (keyword 'inverse', '=', varchar, '.', varchar) -> typeinfoblockEnd: ('inverse', $2, $4)
+typeinfoblockEnd: (',') -> typeinfoblock: none
+typeinfoblockEnd: (end block) -> final: none
+
+
+
