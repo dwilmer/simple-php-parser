@@ -60,6 +60,7 @@ For each state, there is a set of rewrite rules, which consist of three parts:
 3. The resulting state.
 
 The way Parser walks through the code is as follows:
+
 1. For the current state, it compares the expected input of the rewrite rules to the available tokens.
     Of all tokens rewrite rules that are applicable, the longest rewrite rule is chosen.
     These tokens are “consumed”, or actually a pointer is moved past these tokens, and passed as input to the output function.
@@ -87,24 +88,26 @@ I refer to that section to explain each individual function's workings.
 Tokenizer
 ---------
 Constants (which are public static variables):
+
 - `SPACE`: a single space
 - `TAB`: a single tab
 - `NEWLINE`: a newline
 - `WHITESPACE`: any combination of whitespace
 
 Methods:
+
 - `addBoundary($boundary, $isRegex = false)`:  
-   This function adds a boundary that is used to break up the input file into chunks.
-   This boundary is not included in the chunks.
-   The parameter `$isRegex` denotes that the given boundary is a regular expression, which is the case for the four constants as well.
-   If it is set to `false`, the `boundary` value is escaped before using it in a regular expression.
+    This function adds a boundary that is used to break up the input file into chunks.
+    This boundary is not included in the chunks.
+    The parameter `$isRegex` denotes that the given boundary is a regular expression, which is the case for the four constants as well.
+    If it is set to `false`, the `boundary` value is escaped before using it in a regular expression.
 - `addBoundaries($boundaries)`:  
-   Adds an array of boundaries, similar to calling `addBoundary($boundary)` several times.
-   It assumes that none of the boundaries are regular expressions.
+    Adds an array of boundaries, similar to calling `addBoundary($boundary)` several times.
+    It assumes that none of the boundaries are regular expressions.
 - `addConstruct($construct)`:  
-   Registers a construct, which is similar to a boundary but is included as a separate part.
+    Registers a construct, which is similar to a boundary but is included as a separate part.
 - `addConstructs($constructs)`:  
-   Registers an array of constructcs, calling `addConstruct` on every item of the array.
+    Registers an array of constructcs, calling `addConstruct` on every item of the array.
 - `addBlock($open, $close)`:  
    Registers a block which is opened by the string denoted by `$open` and closed by the string given in `$close`.
 - `addString($open, $close)`:  
