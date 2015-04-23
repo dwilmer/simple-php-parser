@@ -42,13 +42,42 @@ It does the following things:
     Note that constructs are used to break up parts, but keywords aren't. Take, for example, the word "nifty" and the keyword "if".
     The part is not equal to "if", so it is not classified as a keyword.
     If, instead of a keyword, we would make "if" a construct, the word "nifty" would have been broken into a varchar "n", the construct "if", and the varchar "ty".
+    Also note that this classification is not context-aware: if a word is marked as keyword, it is considered a keyword wherever it is found — not just in the correct location.
 4. Try to match openings and closings of blocks. These can be nested as well.
     Note that blocks can be opened and closed by the same string, in this case you cannot directly nest these within eachother, as there is no distinction between having the two blocks nested or having the blocks side by side.
-    In this case, the parser will decide to close the current block rather than opening a new block within the current block.
+    In this case, the tokenizer will decide to close the current block rather than opening a new block within the current block.
+    If a closing block is found of a block that is not opened, or an opened block is never closed, the tokenizer will throw a ParseException.
+5. End each block, as well as the whole file, with a special "end" token: either the end of a block or the end of the file.
 
 Parser
 ------
-Todo…
+The parser takes the output of the tokenizer and walks through it, rewriting it in the process.
+
+To do this, the parser has a state machine that starts in the "start" state and continues until it reaches the "end" state.
+For each state, there is a set of rewrite rules, which consist of three parts:
+1. The tokens to be consumed. This is an array of several tokens, saying it expects certain keywords or constructs, or a varchar or a string.
+2. A function determining the output, which is given these tokens as input.
+3. The resulting state.
+
+The way Parser walks through the code is as follows:
+1. For the current state, it compares the expected input of the rewrite rules to the available tokens.
+    Of all tokens rewrite rules that are applicable, the longest rewrite rule is chosen.
+    These tokens are “consumed”, or actually a pointer is moved past these tokens, and passed as input to the output function.
+    If no rewrite rules match the available tokens, a ParseException is thrown.
+    Please note that, since empty transition (also known as ɛ transitions) are allowed, an endless loop can easily be created.
+    In current form this is not detected, so caveat emptor.
+2. If there are any blocks in this rewrite rule, the parser recurses into this block using a recurse rule.
+    Recurse rules are a set of rules containing an outer state, the block type, and the inner state.
+    The outer state, or the current state before applying the rewrite rule, and the block type determine the inner state, which is the start state of the parser when parsing the block contents.
+    When the parser has finished parsing the block, the rewritten block is used instead of the original block as input for the function.
+3. The result of the output function is concatenated with the output array.
+    Therefore, anything that has to be appended has to be wrapped inside another array.
+    This is useful when different rewrite rules define different aspects of an object, and you want to store these as a dictionary or map.
+    This is not the case when using a language definition file: in this simple case, I chose to simply append the result.
+4. Whenever the parser is in the "end" state, it will stop parsing the current part.
+    This may be either a block, and it will return from parsing this block, or the whole file.
+    It will stop even if it has not yet reached the end of the block or the end of the file.
+    Also, when the parser has reached the end of a block or the end of a file without reaching the end state it will throw a ParseException.
 
 Function Reference
 ==================
