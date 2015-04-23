@@ -286,7 +286,7 @@ These are the constructs that form strings:
 
 Example
 -------
-In the `example.ldl` file, you can find an example file for testing.
-
+The `test.ldf` file contains the language definition for a simple entity definition language.
+A test file for this language is created as `test.edf`.
 
 
