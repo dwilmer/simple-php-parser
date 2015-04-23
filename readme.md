@@ -150,6 +150,18 @@ Methods:
     The `$startState` is used for recursion, but you can change it yourself if you want.
     Just remember to use the new startstate in the rewrite rules.
 
+ParseException
+--------------
+This class extends [\Exception](http://php.net/manual/en/class.exception.php).
+
+Constructors:
+
+- `new ParseException($message, $expected, $actual)`: creates a new ParseException with the given message, a string describing an expected value and a string describing the actually found value.
+
+Methods:
+
+- `getExpected()`: returns the string describing the expected value.
+- `getActual()`: returns the string describing the actual value.
 
 Language Definition Language Reference
 ======================================
