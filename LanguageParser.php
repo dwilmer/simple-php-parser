@@ -234,6 +234,11 @@ class LanguageParser {
 			'rewriteSourceArrayEnd');
 		$ldfParser->addRewriteRule(
 			'rewriteSourceArray',
+			array(array('keyword', 'string')),
+			function($tokens) {return array(array('string')); },
+			'rewriteSourceArrayEnd');
+		$ldfParser->addRewriteRule(
+			'rewriteSourceArray',
 			array(array('keyword', 'end'), array('keyword', 'file')),
 			function($tokens) {return array(array('end', 'file')); },
 			'rewriteSourceArrayEnd');
