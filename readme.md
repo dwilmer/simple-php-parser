@@ -81,7 +81,49 @@ The way Parser walks through the code is as follows:
 
 Function Reference
 ==================
-Todo…
+In this section I assume you have read the previous section on the inner workings.
+I refer to that section to explain each individual function's workings.
+
+Tokenizer
+---------
+Constants (which are public static variables):
+- `SPACE`: a single space
+- `TAB`: a single tab
+- `NEWLINE`: a newline
+- `WHITESPACE`: any combination of whitespace
+
+Methods:
+- `addBoundary($boundary, $isRegex = false)`:  
+   This function adds a boundary that is used to break up the input file into chunks.
+   This boundary is not included in the chunks.
+   The parameter `$isRegex` denotes that the given boundary is a regular expression, which is the case for the four constants as well.
+   If it is set to `false`, the `boundary` value is escaped before using it in a regular expression.
+- `addBoundaries($boundaries)`:  
+   Adds an array of boundaries, similar to calling `addBoundary($boundary)` several times.
+   It assumes that none of the boundaries are regular expressions.
+- `addConstruct($construct)`:  
+   Registers a construct, which is similar to a boundary but is included as a separate part.
+- `addConstructs($constructs)`:  
+   Registers an array of constructcs, calling `addConstruct` on every item of the array.
+- `addBlock($open, $close)`:  
+   Registers a block which is opened by the string denoted by `$open` and closed by the string given in `$close`.
+- `addString($open, $close)`:  
+   Registers a string which is opened by the string denoted by `$open` and closed by the string given in `$close`.
+- `addKeyword($keyword)`:  
+   Registers a keyword for recognising by the tokenizer.
+- `addKeywords($keywords)`:  
+   Registers an array of keywords by calling `addKeyword` once for each element of the `$keywords` array.
+- `tokenize($string)`:  
+   Reads the given string and returns a string containing all found tokens.
+- `tokenizeFile($filename)`:  
+   Reads the file with the given filename, and tokenizes it using the `tokenize` function.
+
+Parser
+------
+
+
+
+
 
 Language Definition Language Reference
 ======================================
