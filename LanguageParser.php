@@ -43,7 +43,7 @@ class LanguageParser {
 	private static function getTokenizer() {
 		if(LanguageParser::$ldfTokenizer == null) {
 			$ldfTokenizer = new Tokenizer();
-			$ldfTokenizer->addBoundary(Tokenizer::$WHITESPACE, true);
+			$ldfTokenizer->addBoundary(Tokenizer::WHITESPACE, true);
 			$ldfTokenizer->addKeywords(array('TOKENS', 'BLOCKS', 'REWRITERULES'));
 			$ldfTokenizer->addKeywords(array('keyword', 'keywords', 'construct', 'constructs', 'block'));
 			$ldfTokenizer->addKeywords(array('ignore', 'whitespace', 'newline', 'space', 'tab', 'end', 'block', 'string', 'varchar', 'none', 'whitespace', 'file'));
@@ -294,16 +294,16 @@ class LanguageParser {
 				case 'ignore':
 					switch($rule[2]) {
 					case 'whitespace':
-						$ldfTokenizer->addBoundary(Tokenizer::$WHITESPACE, true);
+						$ldfTokenizer->addBoundary(Tokenizer::WHITESPACE, true);
 						break;
 					case 'newline':
-						$ldfTokenizer->addBoundary(Tokenizer::$NEWLINE, true);
+						$ldfTokenizer->addBoundary(Tokenizer::NEWLINE, true);
 						break;
 					case 'tab':
-						$ldfTokenizer->addBoundary(Tokenizer::$TAB, true);
+						$ldfTokenizer->addBoundary(Tokenizer::TAB, true);
 						break;
 					case 'space':
-						$ldfTokenizer->addBoundary(Tokenizer::$SPACE, true);
+						$ldfTokenizer->addBoundary(Tokenizer::SPACE, true);
 						break;
 					case 'varchar':
 						$ldfTokenizer->addBoundary($rule[3]);

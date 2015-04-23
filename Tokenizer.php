@@ -6,10 +6,10 @@ namespace parser;
 
 class Tokenizer {
 	// constatns
-	public static $SPACE = ' ';
-	public static $TAB = "\t";
-	public static $NEWLINE = "\r?\n";
-	public static $WHITESPACE = '[\s]+';
+	const SPACE = ' ';
+	const TAB = "\t";
+	const NEWLINE = "\r?\n";
+	const WHITESPACE = '[\s]+';
 
 	// Boundaries for Splitting / Scanning
 	private $excludedTokens;
