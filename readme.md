@@ -163,6 +163,130 @@ Methods:
 - `getExpected()`: returns the string describing the expected value.
 - `getActual()`: returns the string describing the actual value.
 
+LanguageParser
+--------------
+This class is a wrapper for the Tokenizer and the Parser, using a language definition file to configure them both.
+
+Constructors:
+
+- `new LanguageParser($languageDefinitionFile)`: reads the file specified by the string `$langueDefinitionFile` as file name.
+    This is expected to be a language definition file (see below for the language specification).
+    The language definition in the given file is used to configure a tokenizer and a parser, which are private.
+
+Methods:
+
+- `parse($inputFile)`: read the file specified by the string `$inputFile` and parses it using the tokenizer and parser.
+
+
 Language Definition Language Reference
 ======================================
-Todo…
+The Language Definition Language is little more than the above methods in a shorter, better readable syntax.
+
+Basic syntax
+------------
+In this language, whitespace is used only as separation and is otherwise ignored.
+The amount and nature of whitespace does not matter: any combination of spaces, tabs, and newlines is considered the same.
+
+Strings are pieces of text enclosed by single quotes (`'`).
+
+File structure
+--------------
+A file is divided into three parts: tokens, block recurse rules and block rewrite rules.
+These are denoted by the keywords `TOKENS`, `BLOCKS` and `REWRITERULES` as a start.
+The parts can be used multiple times and in any order, or left out if desired (which makes little sense, except maybe when there are no blocks for recursion).
+
+### TOKENS
+In the TOKENS block, the tokenizer is configured.
+The different types of tokens are configured using the keywords `ignore`, `keyword`, `keywords`, `construct`, `constructs`, `block`, and `string`.
+
+- `ignore`: after this keyword, either a string or one of `space`, `tab`, `newline`, or `whitespace` is expected (e.g. `ignore whitespace` or `ignore '#'`). This will be used as input for the `addBoundary` function of the Tokenizer. Note that a string is not considered a regular expression, while the newline and whitespace are.
+- `keyword`/`keywords`: these can be used interchangeably, there is no actual distinction between these keywords. The `keyword`/`keywords` keyword should be followed by one or more strings, separated by commas (e.g. `keywords 'foo', 'bar'` or `keyword 'baz'`). These are the keywords of your language.
+- `construct`/`constructs`: similar to `keyword`/`keywords`, these can be used interchangeable as well. The keyword should be followed by one or more strings, separated by commas (e.g. `construct '.'` or `constructs '->', ':'`). These are the constructs of your language.
+- `block`: this keyword should be followed by two strings, denoting the opening and closing of a block (e.g. `block '{' '}'`).
+- `string`: this keyword should be followed by two strings, denoting the opening and closing of a string (e.g. `string '<<' '>>'` or `string '"' '"'`).
+
+### BLOCKS
+In this part, the recurse rules of the parser are defined.
+The syntax is as follows: `<state> : '<blocktype>' -> <recurseStart>`, where `<state>` and `<recurseStart>` are names of states and `<blocktype>` is a string, corresponding to the opening string of a block.
+These are used as input for the `addRecurseRule` function of the Parser.
+
+### REWRITERULES
+In this part, the rewrite rules of the parser are defined.
+The syntax is as follows:  `<startState> : (<input>) -> <endState> : (<output>)`, where `<startState>` and `<endState>` are names of states and `<input>` and `<output>` denote the expected input and the produced output.
+
+Note that, since `end` is already a keyword, the `end` state should be denoted by the word `final`.
+This is a work-around which will be fixed in a later version.
+
+#### input
+The expected input is a set of zero or more comma separated tokens defining what tokens are expected as input.
+The following tokens can be used:
+
+- `keyword <string>`: expect a keyword, for example `keyword 'foo'`.
+- `block <string>`: expect a block, for example `block '('`.
+- `<string>`: expect a construct, for example `'->'`.
+- `varchar`: expect a varchar.
+- `string`: expect a string.
+- `end block`: expect the end of the current block.
+- `end file`: expect the end of the file.
+
+#### output
+The output consists of one or more comma separated strings or backreferences.
+This creates a tuple which will be appended to the output array.
+Note that this is different from the behaviour of the `addRewriteRule` method of the Parser; this is done to keep the language simple and because I expect that the more advanced usage of the `addRewriteRule` method is not necessary most of the time.
+
+The syntax of the backreference is a dollar sign (`$`) followed by a number.
+This number is the zero-based index of the value of the desired token.
+For example, when the expected input is `(varchar, '+', varchar)` we could use `('add', $0, $2)` as output.
+This will create a tuple with the string "add" as first item, and the two arguments of the addition as second and third item.
+
+For syntactic sugar, when there is no output, the whole item can be replaced by the keyword `none`.
+Take for example the following rewrite rule, designed to make a free transition from the `tokens` state to the `start` state:
+
+    tokens : () -> start: none
+
+
+List of Keywords & constructs
+-----------------------------
+These are all keywords in the language, in alphabetical order.
+They should not be used at any place other than when they're expected or in strings.
+
+- `BLOCKS`
+- `REWRITERULES`
+- `TOKENS`
+- `block`
+- `construct`
+- `constructs`
+- `end`
+- `file`
+- `ignore`
+- `keyword`
+- `keywords`
+- `newline`
+- `none`
+- `space`
+- `string`
+- `tab`
+- `varchar`
+- `whitespace`
+
+These are all constructs in the language:
+
+- `,`
+- `$`
+- `:`
+- `->`
+
+These are the constructs that form blocks:
+
+- `(` and `)`
+
+These are the constructs that form strings:
+- `'` and `'`.
+
+
+Example
+-------
+In the `example.ldl` file, you can find an example file for testing.
+
+
+
