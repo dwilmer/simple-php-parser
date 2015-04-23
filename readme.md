@@ -123,9 +123,32 @@ Methods:
 
 Parser
 ------
+Methods:
 
+- `addRewriteRule($currentState, $consume, $produce, $nextState)`:
+    This function adds a rewrite rule to the state `$currentState`.
+    Both states are simple strings.
+    Some remarks on the `$consume` and `$produce` arguments:
+    
+    + `$consume` should be an array, containing subarrays which specify the type of token that is expected.
+        The first item of this subarray should be a string, either `keyword`, `construct`, `block`, `end`, `string` or `varchar`.
+	The second item of this subarray should be a string indicating the contents — that is, which keyword, construct, or end.
+	The keywords and constructs are the ones given, the block type is indicated by its opening, and the end can be either `block` or `file`.
+	Of course, the contents of a string or varchar cannot be defined and the subarray needs only one item.
+	If the rewrite rule represents an empty transition, `$consume` should be an empty array.
+    + `$produce` should be a function reference (as a string) or an [anonymous function](http://php.net/manual/en/functions.anonymous.php), with the latter being preferred.
+        It should take one argument, and this is an array of token values.
+	That is: for all strings and varchars it is the value; for all keywords, constructs, and ends it is the type of keyword, construct or end; for blocks, it is an array containing the parsed content of the blocks.
+	There is one value in the array for each token, in the order of the tokens.
+	It should return an array that is then merged with the current output array.
+	If, for example, you want to append a something, wrap it inside an array and return that.
 
-
+- `addRecurseRule($state, $blockType, $recurseStart)`:  
+    This function adds a recurse rule, as explained in the "How does it work?" section.
+- `parse($ast, $startState = 'start'):`  
+    This function parses the ast which is produced by the tokenizer, as explained in the "How does it work?" section.
+    The `$startState` is used for recursion, but you can change it yourself if you want.
+    Just remember to use the new startstate in the rewrite rules.
 
 
 Language Definition Language Reference
