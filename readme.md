@@ -286,7 +286,8 @@ These are the constructs that form strings:
 
 Example
 -------
-The `test.ldf` file contains the language definition for a simple entity definition language.
-A test file for this language is created as `test.edf`.
-
+A small working example can be found in the three files name `example`:
+- `example.ldf` contains the language definition for a small mathematical expression language
+- `example.expression` contains an example expression in the language described by the `example.ldf` file.
+- `example.php` is a small example showing the output.
 

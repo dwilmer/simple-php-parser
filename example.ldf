@@ -1,0 +1,27 @@
+  TOKENS
+keywords 'pow', 'root'
+constructs '+', '-', '/', '*'
+ignore whitespace
+ignore ','
+block '(' ')'
+string '/*' '*/'
+
+
+  BLOCKS
+start: '(' -> start
+
+  REWRITERULES
+start: (string) -> start: none
+start: (block '(')) -> operator: ('expression', $0)
+start: (varchar) -> operator: ('constant', $0)
+operator: ('+') -> operand: ('add')
+operator: ('-') -> operand: ('subtract')
+operator: ('/') -> operand: ('divide')
+operator: ('*') -> operand: ('multiply')
+operator: (keyword 'pow') -> operand: ('power')
+operator: (keyword 'root') -> operand: ('root')
+operand: (block '(')) -> endExp: ('expression', $0)
+operand: (varchar) -> endExp: ('constant', $0)
+endExp: (end block) -> final: none
+endExp: (end file) -> final: none
+
