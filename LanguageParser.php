@@ -22,10 +22,28 @@ class LanguageParser {
 	 * @param $languageDefinitionFile The path to the language definition file
 	 */
 	public function __construct($languageDefinitionFile) {
-		$ldfAst = LanguageParser::getTokenizer()->tokenize(file_get_contents($languageDefinitionFile));
-		$parsedLDF = LanguageParser::getParser()->parse($ldfAst);
+		$ldfAst = LanguageParser::getLdfTokenizer()->tokenize(file_get_contents($languageDefinitionFile));
+		$parsedLDF = LanguageParser::getLdfParser()->parse($ldfAst);
 		$this->tokenizer = LanguageParser::createTokenizer($parsedLDF);
 		$this->parser = LanguageParser::createParser($parsedLDF);
+	}
+
+	/**
+	 * Returns the internal tokenizer
+	 * This is an instance of the Tokenizer class pre-configured using the rules given in the language definition file.
+	 * This way, you can define constructs, strings, etc… that use single quotes — which is currently impossible in the language definition language.
+	 */
+	public function getTokenizer() {
+		return $this->tokenizer;
+	}
+
+	/**
+	 * Returns the internal parser
+	 * This is an instance of the Parser class pre-configured using the rules given in the langugage definition file.
+	 * You can adapt this parser to handle constructs and blocks that use single quotes (like the tokenizer) and have finer-grained control over the output of a rewrite rule using a function.
+	 */
+	public function getParser() {
+		return $this->parser;
 	}
 
 	/**
@@ -40,7 +58,7 @@ class LanguageParser {
 		return $this->parser->parse($tokenized);
 	}
 
-	private static function getTokenizer() {
+	private static function getLdfTokenizer() {
 		if(LanguageParser::$ldfTokenizer == null) {
 			$ldfTokenizer = new Tokenizer();
 			$ldfTokenizer->addBoundary(Tokenizer::WHITESPACE, true);
@@ -55,7 +73,7 @@ class LanguageParser {
 		return LanguageParser::$ldfTokenizer;
 	}
 
-	private static function getParser() {
+	private static function getLdfParser() {
 		if(LanguageParser::$ldfParser == null) {
 			$ldfParser = new Parser();
 
