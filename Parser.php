@@ -56,6 +56,22 @@ class Parser {
 			for(; $index < $end; $index++) {
 				$node = $ast[$index];
 				if($node[0] == 'block') {
+					if(!isset($this->recurseRules[$state][$node[1]])) {
+						// compile and throw exception
+						$message = 'Missing Recurse Rule';
+						$expected = "Recurse rule for '{$node[1]}' block in state '{$state}'";
+						$actual = 'rewrite rule "' . $state .' : (';
+						foreach($consume as $consumePart) {
+							$actual .= implode(' ', $consumePart);
+							$actual .= ',';
+						}
+						$actual .= ') -> ';
+						$actual .= $nextState;
+						$actual .= '" without matching recurse rule';
+
+						throw new ParseException($message, $expected, $actual);
+					}
+
 					$blockState = $this->recurseRules[$state][$node[1]];
 					$arguments[] = $this->parse($node[2], $blockState);
 				} else {
