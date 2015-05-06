@@ -1,9 +1,9 @@
 <?php
 namespace parser;
 
-include 'Tokenizer.php';
-include 'Parser.php';
-include 'ParseException.php';
+require_once 'Tokenizer.php';
+require_once 'Parser.php';
+require_once 'ParseException.php';
 
 /**
  * A class which creates a parser for a language defined by a language definition file.
@@ -109,7 +109,7 @@ class LanguageParser {
 			'tokens');
 		$ldfParser->addRewriteRule(
 			'tokens',
-			array(array('keyword', 'ignore'), array('varchar')),
+			array(array('keyword', 'ignore'), array('string')),
 			function($tokens) {return array(array('tokenizer', 'ignore', 'varchar', $tokens[1])); },
 			'tokens');
 

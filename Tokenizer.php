@@ -38,16 +38,10 @@ class Tokenizer {
 	}
 
 	// Functions for setting up the tokenizer
-	private function escapeBoundary($boundary) {
-		return str_replace(
-			array('\\','.','[',']','(',')', '$'),
-			array('\\\\','\.','\[', '\]','\(','\)', '\$'), $boundary);
-	}
-
 	public function addBoundary($boundary, $isRegex = false) {
 		// escape boundary
 		if(!$isRegex) {
-			$boundary = $this->escapeBoundary($boundary);
+			$boundary = preg_quote($boundary, '/');
 		}
 		$this->excludedTokens[] = $boundary;
 	}
@@ -60,7 +54,7 @@ class Tokenizer {
 
 	public function addConstruct($construct) {
 		$this->constructs[] = $construct;
-		$this->includedTokens[] = $this->escapeBoundary($construct);
+		$this->includedTokens[] = preg_quote($construct, '/');
 	}
 
 	public function addConstructs($constructs) {
@@ -71,11 +65,11 @@ class Tokenizer {
 
 	public function addBlock($open, $close) {
 		if($open == $close) {
-			$this->includedTokens[] = $this->escapeBoundary($open);
+			$this->includedTokens[] = preg_quote($open, '/');
 			$this->blockBoundaries[] = $open;
 		} else {
-			$this->includedTokens[] = $this->escapeBoundary($open);
-			$this->includedTokens[] = $this->escapeBoundary($close);
+			$this->includedTokens[] = preg_quote($open, '/');
+			$this->includedTokens[] = preg_quote($close, '/');
 			$this->blockOpens[] = $open;
 			$this->blockCloses[] = $close;
 		}
@@ -104,7 +98,7 @@ class Tokenizer {
 				if($i > 0) {
 					$pattern .= '|';
 				}
-				$pattern .= '(' . $this->stringOpens[$i] . '.*' . $this->stringCloses[$i] . ')';
+				$pattern .= '(' . preg_quote($this->stringOpens[$i], '/') . '.*' . preg_quote($this->stringCloses[$i], '/') . ')';
 			}
 			$pattern .= '/U';
 			$parts = preg_split($pattern, $string, null, PREG_SPLIT_DELIM_CAPTURE);
