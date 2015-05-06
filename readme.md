@@ -214,8 +214,7 @@ These are used as input for the `addRecurseRule` function of the Parser.
 In this part, the rewrite rules of the parser are defined.
 The syntax is as follows:  `<startState> : (<input>) -> <endState> : (<output>)`, where `<startState>` and `<endState>` are names of states and `<input>` and `<output>` denote the expected input and the produced output.
 
-Note that, since `end` is already a keyword, the `end` state should be denoted by the word `final`.
-This is a work-around which will be fixed in a later version.
+Note that, although `end` is already a keyword, it can be used here to denote the end state.
 
 #### input
 The expected input is a set of zero or more comma separated tokens defining what tokens are expected as input.
