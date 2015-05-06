@@ -217,6 +217,16 @@ class LanguageParser {
 			array(array('varchar'), array('construct', ':'), array('block', '(')),
 			function($tokens) {return array(array('parser', 'rewriteDestination', $tokens[0], $tokens[2]));},
 			'rewrites');
+		$ldfParser->addRewriteRule(
+			'rewriteDestination',
+			array(array('keyword', 'end'), array('construct', ':'), array('keyword', 'none')),
+			function($tokens) {return array(array('parser', 'rewriteDestination', 'end', 'none'));},
+			'rewrites');
+		$ldfParser->addRewriteRule(
+			'rewriteDestination',
+			array(array('keyword', 'end'), array('construct', ':'), array('block', '(')),
+			function($tokens) {return array(array('parser', 'rewriteDestination', 'end', $tokens[2]));},
+			'rewrites');
 		$ldfParser->addRecurseRule('rewriteDestination', '(', 'rewriteDestinationArrayStart');
 
 		// contents of source array
@@ -381,9 +391,6 @@ class LanguageParser {
 
 					$destinationFunction = LanguageParser::getRewriteFunction($rule[3]);
 					$destinationState = $rule[2];
-					if($destinationState == 'final') {
-						$destinationState = 'end';
-					}
 
 					$ldfParser->addRewriteRule($rewriteSource->state,
 						$rewriteSource->tokens,

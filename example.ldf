@@ -23,6 +23,6 @@ operator: (keyword 'pow') -> operand: ('power')
 operator: (keyword 'root') -> operand: ('root')
 operand: (block '(') -> endExp: ('expression', $0)
 operand: (varchar) -> endExp: ('constant', $0)
-endExp: (end block) -> final: none
-endExp: (end file) -> final: none
+endExp: (end block) -> end: none
+endExp: (end file) -> end: none
 
