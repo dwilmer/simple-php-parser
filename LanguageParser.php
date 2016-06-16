@@ -54,6 +54,9 @@ class LanguageParser {
 	 */
 	public function parse($inputFile) {
 		$inputString = file_get_contents($inputFile);
+                return $this->parseString($inputString);
+        }
+        public function parseString($inputString) {
 		$tokenized = $this->tokenizer->tokenize($inputString);
 		return $this->parser->parse($tokenized);
 	}
