@@ -5,7 +5,7 @@
 namespace parser;
 
 class Tokenizer {
-	// constatns
+	// constants
 	const SPACE = ' ';
 	const TAB = "\t";
 	const NEWLINE = "\r?\n";
